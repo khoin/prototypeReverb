@@ -57,7 +57,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 				automationRate: "k-rate"
 		},{
 				name: 'shimmer',
-				defaultValue: 1,
+				defaultValue: 0,
 				minValue: 0,
 				maxValue: 1,
 				automationRate: "k-rate"
@@ -87,7 +87,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 		this._lp2       = 0.0;
 		this._lp3       = 0.0;
 
-		this._pShiftL   = 2048 * 3;
+		this._pShiftL   = 1024*2;
 		this._pShiftD   = new Float32Array(this._pShiftL);
 		this._pShiftR   = 0;
 		this._pShiftS   = 0;
@@ -174,25 +174,25 @@ class DattorroReverb extends AudioWorkletProcessor {
 
 			let split       =  si *  this.readPreDelay(3) + this.readDelay(3);
 
-			// pitchshift
-			this._pShiftD[this._pShiftR] = split;
-			let shift = Math.sin(Math.PI*this._pShiftS/this._pShiftL)                       
-							* this._pShiftD[(this._pShiftR+1+~~ this._pShiftS                  )%this._pShiftL]
-					+   Math.sin(Math.PI*((this._pShiftS + this._pShiftL/2)%this._pShiftL)/this._pShiftL) 
-							* this._pShiftD[(this._pShiftR+1+~~(this._pShiftS + this._pShiftL/2))%this._pShiftL];
-
 			// 1Hz (footnote 14, pp. 665)
 			let excursion   =  ~~(ex * (1+ Math.cos(currentTime*6.28))); // Non-negative means I can do the ~~flooring trick
 			
 			// left
-			this.writeDelay( 4, shift +       dc * this.readDelay(11)             + ft * this.readDelayAt(4, excursion) ); // tank diffuse 1
+			this.writeDelay( 4, split +       dc * this.readDelay(11)             + ft * this.readDelayAt(4, excursion) ); // tank diffuse 1
 			this.writeDelay( 5,                    this.readDelayAt(4, excursion) - ft * this.readPreDelay(4)           ); // long delay 1
 			this._lp2        =          (1 - dp) * this.readDelay(5)              + dp * this._lp2                       ; // damp 1
 			this.writeDelay( 6,               dc * this._lp2                      - st * this.readDelay(6)              ); // tank diffuse 2
 			this.writeDelay( 7,                    this.readDelay(6)              + st * this.readPreDelay(6)           ); // long delay 2
 
+			// pitchshift
+			this._pShiftD[this._pShiftR] = dc * this.readDelay(7);
+			let shift = 0.95 * Math.sin(Math.PI*this._pShiftS/this._pShiftL)                       
+							* this._pShiftD[(this._pShiftR+1+~~ this._pShiftS                  )%this._pShiftL]
+					+   0.95 * Math.sin(Math.PI*((this._pShiftS + this._pShiftL/2)%this._pShiftL)/this._pShiftL) 
+							* this._pShiftD[(this._pShiftR+1+~~(this._pShiftS + this._pShiftL/2))%this._pShiftL];
+
 			// right
-			this.writeDelay( 8, shift +       dc * this.readDelay(7)              + ft * this.readDelayAt(8, excursion) ); // tank diffuse 3
+			this.writeDelay( 8, split +            shift                          + ft * this.readDelayAt(8, excursion) ); // tank diffuse 3
 			this.writeDelay( 9,                    this.readDelayAt(8, excursion) - ft * this.readPreDelay(8)           ); // long delay 3
 			this._lp3        =          (1 - dp) * this.readDelay(9)              + dp * this._lp3                       ; // damper 2
 			this.writeDelay(10,               dc * this._lp3                      - st * this.readDelay(10)             ); // tank diffuse 4
