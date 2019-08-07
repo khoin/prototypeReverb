@@ -87,7 +87,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 		this._lp2       = 0.0;
 		this._lp3       = 0.0;
 
-		this._pShiftL   = 1024*2;
+		this._pShiftL   = 1024*6;
 		this._pShiftD   = new Float32Array(this._pShiftL);
 		this._pShiftR   = 0;
 		this._pShiftS   = 0;
