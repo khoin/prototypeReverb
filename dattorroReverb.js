@@ -58,7 +58,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 		},{
 				name: 'shimmer',
 				defaultValue: 0,
-				minValue: 0,
+				minValue: -1,
 				maxValue: 1,
 				automationRate: "k-rate"
 		},{
@@ -95,7 +95,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 		[
 			0.004771345, 0.003595309, 0.012734787, 0.009307483, 
 			0.022579886, 0.149625349, 0.060481839, 0.1249958  , 
-			0.030509727, 0.141695508, 0.089244313, 0.106280031
+			0.030509727, 0.141695508 - (this._pShiftL/sampleRate), 0.089244313, 0.106280031
 		].forEach(x => this.makeDelay(x));
 
 		this._taps = Int16Array.from([
@@ -129,6 +129,18 @@ class DattorroReverb extends AudioWorkletProcessor {
 
 	readPreDelay (index) {
 		return this._Delays[index][1][this._Delays[index][2]];
+	}
+
+	readDelayLAt(index, i) {
+		let d = this._Delays[index];
+		let curr = d[1][(d[3] + ~~i)%d[0]];
+		return curr + (i-~~i++) * (d[1][(d[3] + ~~i)%d[0]] - curr);
+	}
+
+	readPShift(i) { //pShiftS always positive, so is "i"
+		let curr = this._pShiftD[(~~i)%this._pShiftL];
+		let next = this._pShiftD[(~~i + 1)%this._pShiftL];
+		return curr + (i-~~i) * (next-curr);
 	}
 
 	// Only accepts one input, two channels.
@@ -175,10 +187,10 @@ class DattorroReverb extends AudioWorkletProcessor {
 			let split       =  si *  this.readPreDelay(3) + this.readDelay(3);
 
 			// 1Hz (footnote 14, pp. 665)
-			let excursion   =  ~~(ex * (1+ Math.cos(currentTime*6.28))); // Non-negative means I can do the ~~flooring trick
+			let excursion   =  ~~(ex * (1+ Math.cos(currentTime*6.28*1.5))); // Non-negative means I can do the ~~flooring trick
 			
 			// left
-			this.writeDelay( 4, split +       dc * this.readDelay(11)             + ft * this.readDelayAt(4, excursion) ); // tank diffuse 1
+			this.writeDelay( 4, split +       dc * this.readDelay(11)             + ft * this.readDelayLAt(4, excursion) ); // tank diffuse 1
 			this.writeDelay( 5,                    this.readDelayAt(4, excursion) - ft * this.readPreDelay(4)           ); // long delay 1
 			this._lp2        =          (1 - dp) * this.readDelay(5)              + dp * this._lp2                       ; // damp 1
 			this.writeDelay( 6,               dc * this._lp2                      - st * this.readDelay(6)              ); // tank diffuse 2
@@ -186,13 +198,18 @@ class DattorroReverb extends AudioWorkletProcessor {
 
 			// pitchshift
 			this._pShiftD[this._pShiftR] = dc * this.readDelay(7);
-			let shift = 0.95 * Math.sin(Math.PI*this._pShiftS/this._pShiftL)                       
-							* this._pShiftD[(this._pShiftR+1+~~ this._pShiftS                  )%this._pShiftL]
-					+   0.95 * Math.sin(Math.PI*((this._pShiftS + this._pShiftL/2)%this._pShiftL)/this._pShiftL) 
-							* this._pShiftD[(this._pShiftR+1+~~(this._pShiftS + this._pShiftL/2))%this._pShiftL];
+			let shift = 0.98 * Math.sin(Math.PI*this._pShiftS/this._pShiftL)                       
+							* this.readPShift(this._pShiftR+ this._pShiftS        )
+					+   0.98 * Math.sin(Math.PI*((this._pShiftS + this._pShiftL/2)%this._pShiftL)/this._pShiftL) 
+							* this.readPShift(this._pShiftR+ this._pShiftS + this._pShiftL/2);
+			this._pShiftS += sh;
+			if (this._pShiftS < 0) this._pShiftS = this._pShiftL + this._pShiftS ;
+			this._pShiftS %= this._pShiftL;
+			this._pShiftR ++;
+			this._pShiftR %= this._pShiftL;
 
 			// right
-			this.writeDelay( 8, split +            shift                          + ft * this.readDelayAt(8, excursion) ); // tank diffuse 3
+			this.writeDelay( 8, split +            shift                          + ft * this.readDelayLAt(8, excursion) ); // tank diffuse 3
 			this.writeDelay( 9,                    this.readDelayAt(8, excursion) - ft * this.readPreDelay(8)           ); // long delay 3
 			this._lp3        =          (1 - dp) * this.readDelay(9)              + dp * this._lp3                       ; // damper 2
 			this.writeDelay(10,               dc * this._lp3                      - st * this.readDelay(10)             ); // tank diffuse 4
@@ -218,10 +235,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 			lOut[i] = inputs[0][0][i] * dr + lo * we;
 			rOut[i] = inputs[0][1][i] * dr + ro * we;
 
-			this._pShiftS += sh;
-			this._pShiftS %= this._pShiftL;
-			this._pShiftR ++;
-			this._pShiftR %= this._pShiftL;
+			
 
 			i++;
 			// This below could be optimized so that we only update

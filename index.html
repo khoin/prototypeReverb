@@ -9,7 +9,7 @@
 		input { height: 2.2ex; width: 34%;}
 		body {
 			margin: 20px auto;
-			max-width: 880px;
+			max-width: 1200px;
 			padding: 5px;
 		}
 		div>label {
@@ -23,7 +23,7 @@
 	</style>
 </head>
 <body>
-<button id="b1">Play placeboing-guitar.wav</button> <button id="b2">Play kikuo2.wav</button> <button id="b3">Toggle Mic</button>
+<button id="b1">Play placeboing-guitar.wav</button> <button id="b2">Play 44728__casualdave__101elow.wav</button><button id="b4">Play 24344__deleted-user-38815__harmonics1.wav</button> <button id="b3">Toggle Mic</button>
 <br><br>
 <div id="controls">
 	<div>
@@ -83,74 +83,38 @@
 	</div>
 	<div>
 		<label>Shimmer ______(🔻 0 ⬅&nbsp;&nbsp;➡ 1 🔺): </label> 
-		<input type="range" id="sh" name="shimmer" max="1" step="0.000001" >
+		<input type="range" id="sh" name="shimmer" min="-1" max="1" step="0.001" >
 		<span></span> 
 	</div>
 	<br>
 	<div>
 		<label>😷 Presets</label>
-		<button id="smol">roomy owo</button> 
-		<button id="bige">churchy uwu</button>
-		<button id="frez">freezy ewe</button>
-		<button id="ether">ethery .w.</button>
+		<button id="smol">sad raindrops</button> 
+		<button id="bige">-OCTAVE</button>
+		<button id="frez">+FIFTH</button>
+		<button id="ether">OCTAVE</button>
+		<button id="third">late minor third</button>
 	</div>
 </div>
 
 <div>
 	<h2>
-		dattorro's reverb 📣
+		dattorro's reverb 📣 + modifications
 	</h2>
-	<h4>
-		a faithful implementation entirely in Javascript in AudioWorklet. flexible &mdash; freezable &mdash; fast &mdash; free! 
-	</h4>
-	<p>
-		💪 flexible (compared to ConvolverNode) <br>
-		🍨 freezable (just set decay to 1!) <br>
-		🚅 fast (around 0.3ms each .process() on CPU 6x slowdown in Chrome DevTools)<br>
-		🆓 free!! (freeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee in so many ways)
-	</p>
-	<h3>📃 papers papers papers</h3>
-	<ul>
-		<li>AudioWorklet spec [<a href="https://webaudio.github.io/web-audio-api/#audioworklet">winky linky</a>]</li>
-		<li>Jon Dattorro's paper [<a href="https://ccrma.stanford.edu/~dattorro/EffectDesignPart1.pdf">pdf linky</a>]</li>
-	</ul>
-
-	<h3>🎼 music music music</h3>
-	<p>both clips are from Kikuo's Mikukikuo5 under CC BY-NC-SA: former - short fast sounds; latter - pitched.</p>
-	<ul>
-		<li>MAWARU [<a href="https://kikuo.bandcamp.com/track/mawaru">Bandcamp</a>]</li>
-		<li>Sea is [<a href="https://kikuo.bandcamp.com/track/sea-is">Bandcamp</a>]</li>
-		<li>https://freesound.org/people/placeboing/sounds/338387/</li>
-	</ul>
-
-	<h3>✅ todo todo todo</h3>
-	<ul>
-		<li>find guitar/drum example clips</li>
-	</ul>
-
-	<h3>🤔 personal considerations (i.e., deviations from the paper) & misc.</h3>
-	<ul>
-		<li>i didn't employ linear interpolation nor all-pass interpolation anywhere in this implementation</li>
-		<li>32 samples chosen for max excursion depth (because Dattorro's sample-rate is roughly half of 48 kHz)</li>
-		<li>decayRate is <em>not</em> T60. what? (this is an open question, but I believe it is possible to calculate)</li>
-		<li>decayDiffusion2 is free, instead of bounded to decayRate</li>
-		<li>refer to README.md for a write-up of these considerations and other minor details</li>
-	</ul>
-
-	<h3>⚖ license &amp; 💾 source</h3>
-	<p> public domain // [<a href="https://github.com/khoin/DattorroReverbNode">repo</a>]</p>
 </div>
 </body>
 <script type="module">
 const 	aC  = new AudioContext();
 const 	w1  = new Audio('./placeboing-guitar.wav'),
-		w2  = new Audio('./kikuo2.wav');
+		w2  = new Audio('./44728__casualdave__101elow.wav'),
+		w3  = new Audio('./24344__deleted-user-38815__harmonics1.wav');
 
 const 	presets = [
-	[ 525   , 0.5683, 0.4666, 0.5853, 0.3226, 0.6954, 0.6022, 0.6446, 0 , 0.2921, 0.4361, 0 ],
-	[ 0     , 0.928 , 0.7331, 0.4534, 0.8771, 0.7839, 0.1992, 0.5975, 0 , 0.0042, 0.9619, 0 ],
-	[ 0     , 0.999 , 0.75  , 0.625 , 1     , 0.5   , 0.711 , 0.195 , 12, 0.915 , 0.194 , 0 ],
-	[ 0     , 0.999 , 0.23  , 0.667 , 0.86  , 0.7   , 0.5   , 0.3   , 30, 0.53  , 0.17  , 0 ]
+	[0, 0.9999, 0.993, 0.016, 0.9323, 0.9834, 0.006, 0.100, 5, 0.5318, 0.457, -0.013],
+	[ 0     , 0.999 , 0.23  , 0.667 , 0.89  , 0.7   , 0.5   , 0.47   , 5, 0.33  , 0.45  , -0.5 ],
+	[ 0     , 0.999 , 0.23  , 0.667 , 0.89  , 0.7   , 0.5   , 0.47   , 30, 0.53  , 0.35  , 0.5 ],
+	[ 0     , 0.999 , 0.23  , 0.667 , 0.89  , 0.7   , 0.5   , 0.47   , 20, 0.53  , 0.35  , 1 ],
+	[ 5326, 0.999, 0.75, 0.625, 0.68, 0.7, 0.5, 0.005, 16, 0.41199, 0.506, 0.196]
 ];
 
 let micState = false;
@@ -161,23 +125,24 @@ Promise.all([
 ]).then(_ => {
 	let k1 = aC.createMediaElementSource(w1);
 	let k2 = aC.createMediaElementSource(w2);
+	let k3 = aC.createMediaElementSource(w3);
 	let m  = undefined;
 	let mg = aC.createGain();
 	let mx = aC.createGain();
 
 	let reverb = new AudioWorkletNode(aC, 'DattorroReverb');
-	let pshift = new AudioWorkletNode(aC, 'PitchShift');
 	
 	k1.connect(mx);
 	k2.connect(mx);
-	mg.connect(pshift);
-	mx.connect(pshift);
-	pshift.connect(reverb);
+	k3.connect(mx);
+	mx.connect(reverb);
 	reverb.connect(aC.destination);
 
 	b1.onclick = _ => aC.resume() & w1.play();
 	b2.onclick = _ => aC.resume() & w2.play();
+	b4.onclick = _ => aC.resume() & w3.play();
 	b3.onclick = _ => {
+		aC.resume();
 		if (micState) {
 			mg.gain.linearRampToValueAtTime(0, aC.currentTime + 0.1);
 			b3.style.background = '';
@@ -186,7 +151,7 @@ Promise.all([
 			if(m == undefined)
 				navigator.getUserMedia({ audio: true }, stream => {
 					m = aC.createMediaStreamSource(stream);
-					m.connect(mg);
+					m.connect(mx);
 				}, () => {
 					b3.style.background = '';
 					alert("Failed getting microphone.");
@@ -209,9 +174,10 @@ Promise.all([
 	[...document.querySelectorAll("input")]
 		.forEach(r => r.onmousemove = e => push() & (r.nextElementSibling.innerText = r.value));
 
-	[smol, bige, frez, ether]
+	[smol, bige, frez, ether, third]
 		.forEach((b, i) => 
 			b.onclick = e => {
+				aC.resume();
 				[pd, bw, fi, si, dc, ft, st, dp, ex, dr, we, sh].forEach((p, j) => p.value = presets[i][j]);
 				push();
 				setTimeout(pull, 200);
@@ -223,4 +189,4 @@ Promise.all([
 	console.error(e);
 });
 </script>
-</html>
+</html> 
