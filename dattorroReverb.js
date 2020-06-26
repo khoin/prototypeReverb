@@ -87,7 +87,7 @@ class DattorroReverb extends AudioWorkletProcessor {
 		this._lp2       = 0.0;
 		this._lp3       = 0.0;
 
-		this._pShiftL   = 1024*6;
+		this._pShiftL   = 1024*4;
 		this._pShiftD   = new Float32Array(this._pShiftL);
 		this._pShiftR   = 0;
 		this._pShiftS   = 0;
@@ -141,6 +141,25 @@ class DattorroReverb extends AudioWorkletProcessor {
 		let curr = this._pShiftD[(~~i)%this._pShiftL];
 		let next = this._pShiftD[(~~i + 1)%this._pShiftL];
 		return curr + (i-~~i) * (next-curr);
+	}
+
+	readPShiftC(i) { // cubic interpolation, assume delay length is power of 2;
+		// O. Niemitalo: https://www.musicdsp.org/en/latest/Other/49-cubic-interpollation.html
+
+		let frac = i-~~i;
+		let int  = ~~--i;
+		let mask = this._pShiftL - 1;
+
+		let x0 = this._pShiftD[int++ & mask],
+			x1 = this._pShiftD[int++ & mask],
+			x2 = this._pShiftD[int++ & mask],
+			x3 = this._pShiftD[int   & mask];
+
+		let a  = (3*(x1-x2) - x0 + x3) / 2,
+			b  = 2*x2 + x0 - (5*x1+x3) / 2,
+			c  = (x2-x0) / 2;
+
+		return (((a * frac) + b) * frac + c) * frac + x1;
 	}
 
 	// Only accepts one input, two channels.
@@ -199,9 +218,9 @@ class DattorroReverb extends AudioWorkletProcessor {
 			// pitchshift
 			this._pShiftD[this._pShiftR] = dc * this.readDelay(7);
 			let shift = 0.98 * Math.sin(Math.PI*this._pShiftS/this._pShiftL)                       
-							* this.readPShift(this._pShiftR+ this._pShiftS        )
+							* this.readPShiftC(this._pShiftR+ this._pShiftS        )
 					+   0.98 * Math.sin(Math.PI*((this._pShiftS + this._pShiftL/2)%this._pShiftL)/this._pShiftL) 
-							* this.readPShift(this._pShiftR+ this._pShiftS + this._pShiftL/2);
+							* this.readPShiftC(this._pShiftR+ this._pShiftS + this._pShiftL/2);
 			this._pShiftS += sh;
 			if (this._pShiftS < 0) this._pShiftS = this._pShiftL + this._pShiftS ;
 			this._pShiftS %= this._pShiftL;

@@ -142,7 +142,7 @@ Promise.all([
 	b2.onclick = _ => aC.resume() & w2.play();
 	b4.onclick = _ => aC.resume() & w3.play();
 	b3.onclick = _ => {
-		aC.resume();
+		
 		if (micState) {
 			mg.gain.linearRampToValueAtTime(0, aC.currentTime + 0.1);
 			b3.style.background = '';
@@ -150,6 +150,7 @@ Promise.all([
 		} else {
 			if(m == undefined)
 				navigator.getUserMedia({ audio: true }, stream => {
+					aC.resume();
 					m = aC.createMediaStreamSource(stream);
 					m.connect(mx);
 				}, () => {
@@ -161,6 +162,7 @@ Promise.all([
 			b3.style.background = 'darksalmon';
 			micState = true;
 		}
+		console.log(micState);
 	}
 
 	const pull = _ => 
